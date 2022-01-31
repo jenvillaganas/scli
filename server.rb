@@ -25,25 +25,37 @@ EM.run {
       case event
       when "spl-transfer"
         token_address = data["token_address"]
-        recipient = data["recipient"]
+        recipients = data["recipients"]
+        binding.pry
 
-        if token_address && recipient
-          stdin, stdout, stderr, wait_thr = Open3.popen3(
-            'spl-token', 'transfer', token_address, '1', recipient, '--allow-unfunded-recipient', '--fund-recipient')
+        if token_address && recipients
+          threads = []
+          success = []
+          failed = []
+          recipients.each do |recipient|
+            threads << Thread.new do
+              stdin, stdout, stderr, wait_thr = Open3.popen3(
+                'spl-token', 'transfer', token_address, '1', recipient, '--allow-unfunded-recipient', '--fund-recipient')
 
-          log = stdout.read
-          err = stderr.read
-          puts log
-          puts err
-          split_with_signature = log.split("Signature: ")
-          if split_with_signature.count > 1
-            signature = split_with_signature.last.strip
-            ws.send({status: 200, signature: signature}.to_json)
-          elsif err
-            ws.send({status: 500, err: err}.to_json)
-          else
-            ws.send({status: 500, log: log + err }.to_json)
+              log = stdout.read
+              err = stderr.read
+              puts log
+              puts err
+              split_with_signature = log.split("Signature: ")
+              if split_with_signature.count > 1
+                signature = split_with_signature.last.strip
+                # ws.send({status: 200, signature: signature}.to_json)
+                success << {recipient: recipient, signature: signature}
+              elsif err
+                failed << {recipient: recipient, log: err}
+              else
+                failed << {recipient: recipient, log: log + err}
+              end
+            end
           end
+
+          threads.each(&:join)
+          ws.send({status: 200, signature: {success: success, failed: failed}}.to_json)
         else
           ws.send("failed")
         end
