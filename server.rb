@@ -32,6 +32,7 @@ EM.run {
           threads = []
           success = []
           failed = []
+          completed = []
           recipients.each_slice(3).to_a.each do |recipient_arr|
             small_threads = []
             recipient_arr.each do |recipient|
@@ -57,10 +58,11 @@ EM.run {
             end
 
             small_threads.each(&:join)
+            completed << recipient_arr
             puts "Completed: #{recipient_arr}"
           end
 
-          ws.send({status: 200, signature: {success: success, failed: failed}}.to_json)
+          ws.send({status: 200, signature: {success: success, failed: failed, completed: completed}}.to_json)
         else
           ws.send("failed")
         end
