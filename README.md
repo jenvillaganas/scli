@@ -1,3 +1,6 @@
+# Do not use:
+** Use solana-tokens distribute-spl-tokens instead
+
 # SPL Token Transfer Script
 
 ## Usage
