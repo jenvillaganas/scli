@@ -76,7 +76,7 @@ EM.run {
 
           ws.send({status: 200, signature: {success_count: success.count, failed_count: failed.count, success: success, failed: failed, completed: completed}}.to_json)
         else
-          ws.send("failed")
+          ws.send("token address or recipients not found")
         end
       end
     }
